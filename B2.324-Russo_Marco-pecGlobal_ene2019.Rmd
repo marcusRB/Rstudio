@@ -1,0 +1,86 @@
+---
+title: 'UOC - Mineria de datos: PEC Global'
+author: "Autor: Russo Marco"
+date: "Enero 2019"
+output:
+  html_document:
+    includes:
+      in_header: B2.324-PEC-header.html
+    number_sections: yes
+    theme: spacelab
+    toc: yes
+  pdf_document:
+    highlight: zenburn
+    toc: yes
+  word_document: default
+editor_options: 
+  chunk_output_type: inline
+---
+
+# Introducción
+
+En esta PEC trabajaremos con un dataset extraído de UCI - Machine Learning Repository sobre consumo de combustible de coches (en mpg). El dataset se llama “auto-mpg.txt” y consta de 9 variables:
+1. mpg: v. continua
+2. cilindros: v. discreta
+3. cilindrada: v. continua
+4. caballo de vapor (CV): v. continua
+5. peso: v. continua
+6. aceleración: v. continua
+7. año del modelo: v. discreta
+8. origen: v. discreta
+9. nombre del coche (o ID): factor (único)
+
+# Carga de datos
+Cargad el fichero de datos e inspeccionar los tipos de variables. En el caso de que alguna variable no sea del tipo adecuado, aplicad la transformación necesaria. Pista: si una variable que debiese ser de tipo numérico tiene otro tipo es posible que no hayamos identificado bien los missings.
+
+```{r,eval=TRUE,echo=TRUE}
+## Carga del archivo auto-mpg con cabecera y asignamos una nueva variable al dataframe con autompg
+nombreruta_PEC <- paste(getwd(),"/auto-mpg.txt")
+autompg <- read.table(file = "auto-mpg.txt", header = TRUE, stringsAsFactors = FALSE, encoding="UTF-8", na.strings="NA")
+```
+
+
+```{r,eval=TRUE,echo=TRUE}
+## Observaciones del archivo
+# comprobamos los 10 primeros resultads, los últimos, y su estructura
+head(autompg, n= 10)
+tail(autompg, n = 10)
+# visualizamos su estructura
+str(autompg)
+```
+
+> El dataframe autompg contiene 398 observaciones y 9 variables. Me llama la atención la variable CV que contiene valores en formato __character__ con lo cuál se procederá a su transformación a valores númericos
+
+```{r,eval=TRUE,echo=TRUE}
+## Conversión de string a númerico
+table(autompg$CV) #con table se observan además 6 valores inválidos
+autompg$CV <- as.numeric(autompg$CV) # transformamos los valores del tipo char en númericos asignando a la nueva variable CV
+table(autompg$CV)
+str(autompg)
+
+## Los 6 valores inválidos están configurados por defecto como NA y serán excluidos paraanálisis posteriores
+```
+
+# Análisis descriptivo
+Obtened el número de filas y columnas. Para las variables numéricas describid los valores que toman (media, mediana, cuartiles, . . . ). Podéis usar gráficos para complementar el análisis. Finalmente, anotad el número de missings para cada variable.
+
+```{r,eval=TRUE,echo=TRUE}
+summary(autompg) # visualizamos el fichero con summary
+```
+
+
+```{r,eval=TRUE,echo=TRUE}
+IDcar <- as.factor(autompg$ID) # transformamos además el nombre del coche o ID como factor único y lo asignamos a IDcar
+```
+
+
+```{r,eval=TRUE,echo=TRUE}
+## Visualización de los datos a través de boxplot
+attach(autompg)
+# MPG
+boxplot(mpg ~ ID, data = autompg, 
+        xlab = "mpg", ylab = "ID", 
+        main = "Tot Población por Estado",
+        col = "lightgray", border = "darkred", range = 100)
+
+```
