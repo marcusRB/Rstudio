@@ -17,7 +17,10 @@ editor_options:
   chunk_output_type: inline
 ---
 
+
+****
 # Introducción
+****
 
 En esta PEC trabajaremos con un dataset extraído de UCI - Machine Learning Repository sobre consumo de combustible de coches (en mpg). El dataset se llama “auto-mpg.txt” y consta de 9 variables:
 1. mpg: v. continua
@@ -30,8 +33,12 @@ En esta PEC trabajaremos con un dataset extraído de UCI - Machine Learning Repo
 8. origen: v. discreta
 9. nombre del coche (o ID): factor (único)
 
+
+****
 # Carga de datos
 Cargad el fichero de datos e inspeccionar los tipos de variables. En el caso de que alguna variable no sea del tipo adecuado, aplicad la transformación necesaria. Pista: si una variable que debiese ser de tipo numérico tiene otro tipo es posible que no hayamos identificado bien los missings.
+
+****
 
 ```{r,eval=TRUE,echo=TRUE}
 ## Carga del archivo auto-mpg con cabecera y asignamos una nueva variable al dataframe con autompg
@@ -42,9 +49,15 @@ autompg <- read.table(file = "auto-mpg.txt", header = TRUE, stringsAsFactors = F
 
 ```{r,eval=TRUE,echo=TRUE}
 ## Observaciones del archivo
+
+dim(autompg)
+
 # comprobamos los 10 primeros resultads, los últimos, y su estructura
+nrow(autompg)
+ncol(autompg)
 head(autompg, n= 10)
 tail(autompg, n = 10)
+
 # visualizamos su estructura
 str(autompg)
 ```
@@ -61,26 +74,399 @@ str(autompg)
 ## Los 6 valores inválidos están configurados por defecto como NA y serán excluidos paraanálisis posteriores
 ```
 
+****
 # Análisis descriptivo
-Obtened el número de filas y columnas. Para las variables numéricas describid los valores que toman (media, mediana, cuartiles, . . . ). Podéis usar gráficos para complementar el análisis. Finalmente, anotad el número de missings para cada variable.
+Obtened el número de filas y columnas. Para las variables numéricas describid los valores que toman (media, mediana, cuartiles,...). Podéis usar gráficos para complementar el análisis. Finalmente, anotad el número de missings para cada variable.
+****
 
 ```{r,eval=TRUE,echo=TRUE}
 summary(autompg) # visualizamos el fichero con summary
 ```
 
+> CHECK 
+
+
+> La variable __cilindrada__ está expresada en plgs (o pulgada cúbica, unidad de volumen que equivale al volumen de un cubo de una pulgada de lado)
+
+
+> La variable __origen__ del tipo númerica tendría que apartenecer a un determinado continente o país por este motivo se tratará como factor
 
 ```{r,eval=TRUE,echo=TRUE}
-IDcar <- as.factor(autompg$ID) # transformamos además el nombre del coche o ID como factor único y lo asignamos a IDcar
+ # convertimos la variable númerica origen como factor y variable categórica
+autompg$origen <- as.factor(autompg$origen)
+str(autompg)
 ```
 
 
 ```{r,eval=TRUE,echo=TRUE}
-## Visualización de los datos a través de boxplot
+# Comprobación de los países o continentes de la variable origen = 1
+head(subset(autompg, subset = autompg$origen == 1))
+```
+
+> Para la variable *origen* = 1 por las marcas de los coches (chevrolet, ford, buick), tendrá que ser USA o North America
+
+```{r,eval=TRUE,echo=TRUE}
+# Comprobación de los países o continentes de la variable origen = 2
+head(subset(autompg, subset = autompg$origen == 2))
+```
+
+> Para la variable *origen* = 2 por las marcas de los coches (vw, bmw, audi, peugeot) tendrá que ser Europa
+
+```{r,eval=TRUE,echo=TRUE}
+# Comprobación de los países o continentes de la variable origen = 3
+head(subset(autompg, subset = autompg$origen == 3))
+```
+
+> Para la variable *origen* = 3 por las marcas de los coches (toyota, datsun) tendrá que ser Asia
+
+```{r,eval=TRUE,echo=TRUE}
+# Creamos un vector con los 3 continentes
+continente <- c("NorthAmerica", "Europa", "Asia")
+autompg$continente <- as.factor(autompg$origen)
+
+# Convertimos el vector en factor y los añadimos al dataset original
+levels(autompg$continente)[levels(autompg$continente) == 1] <- continente[1]
+levels(autompg$continente)[levels(autompg$continente) == 2] <- continente[2]
+levels(autompg$continente)[levels(autompg$continente) == 3] <- continente[3]
+levels(autompg$continente)
+str(autompg)
+```
+
+
+```{r,eval=TRUE,echo=TRUE}
+## Visualización de las variables a través de boxplot
+
 attach(autompg)
-# MPG
-boxplot(mpg ~ ID, data = autompg, 
-        xlab = "mpg", ylab = "ID", 
-        main = "Tot Población por Estado",
+colnames(autompg)
+head(subset(autompg$ID, subset = autompg$origen == 1))
+
+# Boxplot de las variables mpg por año y origen (continente)
+boxplot(mpg ~ año, data = autompg, 
+        main = "MPG",
+        col = "lightgray", border = "darkred", range = 100,
+        outline = TRUE) 
+
+boxplot(mpg ~ continente, data = autompg, 
+        main = "MPG",
+        col = "lightgray", border = "darkred", range = 100,
+        outline = TRUE)  
+    
+# Boxplot de las variables cilindros por año y origen
+boxplot(cilindros ~ año, data = autompg, 
+        main = "cilindros",
         col = "lightgray", border = "darkred", range = 100)
 
+boxplot(cilindros ~ continente, data = autompg, 
+        main = "cilindros",
+        col = "lightgray", border = "darkred", range = 100)
+
+
+# Boxplot de las variables cilindrada por año y origen
+boxplot(cilindrada ~ año, data = autompg, 
+        main = "cilindrada",
+        col = "lightgray", border = "darkred", range = 100)
+
+boxplot(cilindrada ~ continente, data = autompg, 
+        main = "cilindrada",
+        col = "lightgray", border = "darkred", range = 100)
+
+
+# Boxplot de las variables CV por año y origen
+boxplot(CV ~ año, data = autompg, 
+        main = "CV",
+        col = "lightgray", border = "darkred", range = 100)
+
+boxplot(CV ~ continente, data = autompg, 
+        main = "CV",
+        col = "lightgray", border = "darkred", range = 100)
+
+
+# Boxplot de las variables cilindrada por año y origen
+boxplot(peso ~ año, data = autompg, 
+        main = "peso",
+        col = "lightgray", border = "darkred", range = 100)
+
+boxplot(peso ~ continente, data = autompg, 
+        main = "peso",
+        col = "lightgray", border = "darkred", range = 100)
+
+
+boxplot(aceleración, data = autompg, 
+        main = "aceleración",
+        col = "lightgray", border = "darkred", range = 100)
+
+boxplot(año, data = autompg, 
+        main = "año",
+        col = "lightgray", border = "darkred", range = 100)
+
+boxplot(origen, data = autompg, 
+        main = "origen",
+        col = "lightgray", border = "darkred", range = 100)
+
+#hist(autompg, )
+
 ```
+
+> Visualizaremos la distribución de la variable __cilindros__
+
+```{r,eval=TRUE,echo=TRUE}
+table(cilindros)
+hist(cilindros,
+     main="Distribución Cilindros",
+     xlab="Cilindros", ylab="Frecuencia",
+     col="#9dbbae", border = "black",
+     ylim =c(0,200))
+```
+
+> Visualizaremos la distribución de la variable ___cilindrada__
+
+```{r,eval=TRUE,echo=TRUE}
+table(cilindrada)
+hist(cilindrada,
+     main="Distribución Cilindrada",
+     xlab="Cilindrada", ylab="Frecuencia",
+     col="#9dbbae", border = "black",
+     ylim =c(0,200))
+```
+
+> Visualizaremos la distribución de la variable **CV**
+
+```{r,eval=TRUE,echo=TRUE}
+table(CV)
+hist(CV,
+     main="Distribución CV",
+     xlab="CV", ylab="Frecuencia",
+     col="#9dbbae", border = "black",
+     ylim =c(0,130) , xlim = c(40,230))
+```
+
+> Visualizaremos la distribución de la variable **Peso**
+
+```{r,eval=TRUE,echo=TRUE}
+table(peso)
+hist(peso,
+     main="Distribución Peso",
+     xlab="Peso", ylab="Frecuencia",
+     col="#9dbbae", border = "black")
+```
+
+> Visualizaremos la distribución de la variable **Aceleración**
+
+```{r,eval=TRUE,echo=TRUE}
+table(aceleración)
+hist(aceleración,
+     main="Distribución Aceleración",
+     xlab="Aceleración", ylab="Frecuencia",
+     col="#9dbbae", border = "black")
+```
+
+> Visualizaremos la distribución de la variable **Año**
+
+```{r,eval=TRUE,echo=TRUE}
+table(año)
+hist(año,
+     main="Distribución Año",
+     xlab="Año", ylab="Frecuencia",
+     col="#9dbbae", border = "black", xlim = c(70,82))
+```
+
+```{r,eval=TRUE,echo=TRUE}
+## Verificamos los valores nulos
+table(is.na(autompg))
+
+```
+
+
+
+
+
+****
+# Outliers
+Investigad si existen outliers en las variables numéricas. En caso de detectar outliers, eliminadlos del dataset. Nota: debéis escribir un código R automático (es decir, evitar la inspección y la eliminación manual).
+****
+
+```{r,eval=TRUE,echo=TRUE}
+par(mfrow=c(1, 2))
+plot(autompg$mpg, autompg$cilindrada, xlim=c(0, 28), ylim=c(0, 230), main="With Outliers", xlab="speed", ylab="dist", pch="*", col="red", cex=2)
+abline(lm(cilindrada ~ mpg, data=autompg), col="blue", lwd=3, lty=2)
+```
+
+
+
+
+
+****
+# Intervalo de confianza
+Calculad el IC al 97 % de mpg.
+Nota: Se deben realizar los cálculos manualmente. No se pueden usar funciones R que ya calculen el IC
+directamente (t.test o similar). Sí que podéis usar funciones como qnorm, pnorm, qt y pt.
+****
+
+```{r,eval=TRUE,echo=TRUE}
+# calculamos la media de la variable mpg
+mpgAvg <- mean(mpg)
+
+# calculamos la desviación estandar
+mpgSd <- sd(mpg)
+
+# calculamos el tamaño de la muestra
+n <- dim(autompg)[1]
+
+# Calculo IC 97%
+alpha <- 1-0.97
+
+# Error típico
+errorTipico <- mpgSd / sqrt(n)
+
+# Valor z
+z <- qnorm(1- alpha/2)
+
+# Margen de error
+error <- z * errorTipico
+
+# Límites del intervalo
+lim <- mpgAvg + c(-1,1) * error
+lim
+
+
+table(mpgAvg, mpgSd, errorTipico, z, error, lim[1], lim[2])
+```
+
+## Comprobación con T-student
+
+```{r,eval=TRUE,echo=TRUE}
+t.test(x = mpg, conf.level = 0.97)
+```
+
+> Intepretación
+
+
+
+****
+# Contraste de hipótesis
+Un político afirma que el valor esperado de mpg es, como mínimo, de 25 unidades. Basándonos en nuestros datos, ¿podemos rechazar esta afirmación con un nivel de confianza del 95%?
+Nota: Se deben realizar los cálculos manualmente. No se pueden usar funciones R que ya calculen el IC directamente (t.test o similar). Sí que podéis usar funciones como qnorm, pnorm, qt y pt.
+a) Escribid el contraste a realizar.
+b) Calculad el estadístico de contraste, el valor crítico y el p-valor.
+c) Interpretad el resultado.
+****
+
+H0 > 25
+H1 <= 25
+
+
+```{r,eval=TRUE,echo=TRUE}
+# Región de aceptación de la hipótesis nula
+alpha <- 0.05
+valorCritico <- qt(alpha, df = n-1)
+valorCritico
+```
+
+
+```{r,eval=TRUE,echo=TRUE}
+
+# Ya tenemos calculado la media y la sd de la variable MPG
+mpgAvg
+mpgSd
+
+# Estadístico de contraste
+estadistico <- (mpgAvg - 25) / (mpgSd/sqrt(25))
+estadistico
+```
+
+
+```{r,eval=TRUE,echo=TRUE}
+# Cálculo del valor p asociado a este contraste de hipótesis 
+p <- pt(estadistico, df = n-1, lower.tail = TRUE)
+p
+```
+
+
+> # Interpretación: Como el valor del estadístico de contraste es inferior al valor crítico se rechaza la hipótesis nula.
+> # Interpretación: Como el valor p no es superior a 0.10, se rechaza la hipótesis nula.
+
+
+****
+# Correlación
+a) Obtened las correlaciones entre variables numéricas. Nota: podéis tener problemas por los missings. Usad: ?cor/help(cor) para obtener ayuda y encontrar una solución.
+b) Mostrad las correlaciones con un gráfico. Pista: una opción interesante es usar la librería “corrplot”.
+c) Interpretad el resultado del apartado anterior.
+****
+
+
+```{r,eval=TRUE,echo=TRUE}
+plot(mpg ~ ., main= "Relación entre variables - beneficios",
+     ylab = "Beneficios", xlab = "Ingresos")
+```
+
+
+
+
+
+****
+# Regresión lineal
+a) Estimad un modelo que explique la variable mpg en función de cilindrada, aceleración, año, y origen.
+b) Interpretad el resultado del modelo, indicando si los coeficientes son estadísticamente significativos.
+c) Predecid el valor para una nueva observación: coche de cilindrada 145, aceleración 15.50, año 76 y origen 2.
+****
+
+```{r,eval=TRUE,echo=TRUE}
+par(mfrow = c(2, 2))
+fit <- lm(mpg ~ cilindrada + aceleración + año + origen, data = autompg)
+plot(fit)
+```
+
+```{r,eval=TRUE,echo=TRUE}
+head(summary(lm(mpg ~ . , data = autompg[1:7]))$coefficients, n=10)
+
+summary(lm(mpg ~ cilindrada , data = autompg))$coefficients
+
+summary(lm(mpg ~ aceleración , data = autompg))$coefficients
+
+summary(lm(mpg ~ año , data = autompg))$coefficients
+
+summary(lm(mpg ~ origen , data = autompg))$coefficients
+```
+
+
+****
+# ANOVA
+a) Realizad grupos para la variable año. 
+G1: año < 73
+G2: 73<=año<76
+G3: 76<=año<79
+G4: año > 79
+b) Aplicad ANOVA para identificar si existen diferencias en mpg entre los grupos creados. Interpretad el resultado.
+c) Explicad el significado de los cálculos SSW, SSB y SST de un análisis de varianza. ¿Cómo se usan estos cálculos para investigar si hay diferencias entre los grupos?
+d) En el caso de que se detecten diferencias significativas entre las medias de los distintos grupos, calculad un test a posteriori (post-hoc test) como el test de Tukey. Interpretad el resultado.
+****
+
+
+```{r,eval=TRUE,echo=TRUE}
+# Crearemos los 4 diferentes grupos por año
+
+g1 <- subset(autompg, subset = autompg$año < 73)
+g2 <- subset(autompg, subset = autompg$año >= 73 & autompg$año < 76)
+g3 <- subset(autompg, subset = autompg$año >= 76 & autompg$año < 79)
+g4 <- subset(autompg, subset = autompg$año >= 79)
+
+
+
+```
+
+
+```{r,eval=TRUE,echo=TRUE}
+## Aplicamos ANOVA
+
+library(plyr)
+library(dplyr)
+ddply(autompg, ~autompg$año, summarise, mean=mean(autompg$mpg),sd=sd(autompg$mpg))
+
+g1$means <- ddply(g1, ~g1$año, summarise, mean=mean(g1$mpg), sd=sd(g1$mpg))
+
+aggregate(g1$mpg, data = mpg, FUN = mean)
+
+```
+
+
+
