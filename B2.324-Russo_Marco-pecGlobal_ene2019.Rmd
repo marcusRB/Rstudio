@@ -71,7 +71,7 @@ autompg$CV <- as.numeric(autompg$CV) # transformamos los valores del tipo char e
 table(autompg$CV)
 str(autompg)
 
-## Los 6 valores inválidos están configurados por defecto como NA y serán excluidos paraanálisis posteriores
+## Los 6 valores inválidos están configurados por defecto como NA y serán excluidos para análisis posteriores
 ```
 
 ****
@@ -89,13 +89,7 @@ summary(autompg) # visualizamos el fichero con summary
 > La variable __cilindrada__ está expresada en plgs (o pulgada cúbica, unidad de volumen que equivale al volumen de un cubo de una pulgada de lado)
 
 
-> La variable __origen__ del tipo númerica tendría que apartenecer a un determinado continente o país por este motivo se tratará como factor
-
-```{r,eval=TRUE,echo=TRUE}
- # convertimos la variable númerica origen como factor y variable categórica
-autompg$origen <- as.factor(autompg$origen)
-str(autompg)
-```
+> La variable __origen__ del tipo númerica tendría que apartenecer a un determinado continente o país por este motivo se tratará como factor creando otra columna
 
 
 ```{r,eval=TRUE,echo=TRUE}
@@ -135,7 +129,6 @@ str(autompg)
 
 ```{r,eval=TRUE,echo=TRUE}
 ## Visualización de las variables a través de boxplot
-
 attach(autompg)
 colnames(autompg)
 head(subset(autompg$ID, subset = autompg$origen == 1))
@@ -274,8 +267,20 @@ hist(año,
 ## Verificamos los valores nulos
 table(is.na(autompg))
 
+# Suma la cantidad de nulos
+sum(is.na(autompg))
+
+# Se eliminan los registros con datos nulos
+autompg = na.omit(autompg)
+
+# Comprobamos nuevamente los valores nulos
+sum(is.na(autompg))
+
 ```
 
+```{r,eval=TRUE,echo=TRUE}
+#describe(autompg)
+```
 
 
 
@@ -303,11 +308,34 @@ directamente (t.test o similar). Sí que podéis usar funciones como qnorm, pnor
 ****
 
 ```{r,eval=TRUE,echo=TRUE}
+## Para mejor lectura de los rangos de valores entre las variables numéricas, efectuaremos una normalización de los datos creando un dataset, autompg.z
+autompg.z <- autompg
+
+# Verificamos si existen valores nulos
+sum(is.na(autompg.z))
+
+# Realizamos las normalización de las variables numéricas a excepción de origen y año, estos últimos los trataremos como categorícas.
+autompg.z$mpg <- scale(autompg.z$mpg, scale = TRUE, center = TRUE)
+autompg.z$cilindros <- scale(autompg.z$cilindros, scale = TRUE, center = TRUE)
+autompg.z$cilindrada <- scale(autompg.z$cilindrada, scale = TRUE, center = TRUE)
+autompg.z$CV <- scale(autompg.z$CV, scale = TRUE, center = TRUE)
+autompg.z$ peso <- scale(autompg.z$peso, scale = TRUE, center = TRUE)
+autompg.z$'aceleración' <- scale(autompg.z$'aceleración', scale = TRUE, center = TRUE)
+
+
+# verificamos los 10 primeros resultados
+head(autompg.z, n=10)
+```
+
+
+
+
+```{r,eval=TRUE,echo=TRUE}
 # calculamos la media de la variable mpg
-mpgAvg <- mean(mpg)
+mpgAvg <- mean(autompg$mpg)
 
 # calculamos la desviación estandar
-mpgSd <- sd(mpg)
+mpgSd <- sd(autompg$mpg)
 
 # calculamos el tamaño de la muestra
 n <- dim(autompg)[1]
@@ -395,9 +423,32 @@ c) Interpretad el resultado del apartado anterior.
 
 
 ```{r,eval=TRUE,echo=TRUE}
-plot(mpg ~ ., main= "Relación entre variables - beneficios",
-     ylab = "Beneficios", xlab = "Ingresos")
+cor(autompg.z[1:6])# correlación de las 6 variables númericas excepto el de origen y año
+plot(autompg.z[1:6])
+
+#install.packages("corrplot")
+library(corrplot)
+#dfa_pca_mat <- matrix(as.numeric(unlist(df_pca)),nrow=nrow(df_pca))
+#colnames(dfa_pca_mat) <- colnames(df_pca)
+corrplot(cor(autompg.z[1:6]), is.corr = FALSE, method = "color")
+corrplot(cor(autompg.z[1:6]), is.corr = FALSE, method = "square")
+
+# Añadimos la columna de año en este gráfico
+corrplot(cor(autompg.z[1:7]), is.corr = FALSE, method = "number")
 ```
+
+
+> Una correlación positiva está representada en azul , mientras la correlación negativa en rojo. La intensidad del color y la forma del “símbolo” es proporcional al coeficiente de correlación
+
+> Podemos observar como *cilindros* tiene una correlación positiva con **cilindrada**, **CV** y **peso**, respectivamente 0.95, 0.84 y 0.90
+
+> La cilindrada incide sobre el **peso**, así como a más cilindrada, más **CV** y más **cilindros**.
+
+> La variable *aceleración* incide en el consumo, así que tiene su relación con *mpg*. 
+
+> Referente a la variable *año*, tiene una relación con consumo **mpg** y sobre la **aceleración** aunque si mínima.
+
+
 
 
 
@@ -411,21 +462,28 @@ c) Predecid el valor para una nueva observación: coche de cilindrada 145, acele
 ****
 
 ```{r,eval=TRUE,echo=TRUE}
+attach(autompg.z)
 par(mfrow = c(2, 2))
-fit <- lm(mpg ~ cilindrada + aceleración + año + origen, data = autompg)
+fit <- lm(mpg ~ cilindrada + aceleración + año + origen, data = autompg.z)
 plot(fit)
+anova(fit)
 ```
 
 ```{r,eval=TRUE,echo=TRUE}
-head(summary(lm(mpg ~ . , data = autompg[1:7]))$coefficients, n=10)
+head(summary(lm(mpg ~ . , data = autompg.z[1:7]))$coefficients, n=10)
 
-summary(lm(mpg ~ cilindrada , data = autompg))$coefficients
+summary(lm(mpg ~ cilindrada , data = autompg.z))$coefficients
 
-summary(lm(mpg ~ aceleración , data = autompg))$coefficients
+summary(lm(mpg ~ aceleración , data = autompg.z))$coefficients
 
-summary(lm(mpg ~ año , data = autompg))$coefficients
+summary(lm(mpg ~ año , data = autompg.z))$coefficients
 
-summary(lm(mpg ~ origen , data = autompg))$coefficients
+summary(lm(mpg ~ origen , data = autompg.z))$coefficients
+```
+
+
+```{r,eval=TRUE,echo=TRUE}
+t(coefficients(fit))
 ```
 
 
@@ -443,30 +501,70 @@ d) En el caso de que se detecten diferencias significativas entre las medias de 
 
 
 ```{r,eval=TRUE,echo=TRUE}
-# Crearemos los 4 diferentes grupos por año
+## Crearemos los 4 diferentes grupos por año
+#colnames(autompg)
+#table(autompg$año)
+#str(autompg)
+library(plyr)
+library(dplyr)
+# creamos una copia del dataset original, autompg.anova
+autompg.aov <- data.frame(Año = autompg$año, MPG = autompg$mpg)
+head(autompg.aov)
 
-g1 <- subset(autompg, subset = autompg$año < 73)
-g2 <- subset(autompg, subset = autompg$año >= 73 & autompg$año < 76)
-g3 <- subset(autompg, subset = autompg$año >= 76 & autompg$año < 79)
-g4 <- subset(autompg, subset = autompg$año >= 79)
+aggregate(autompg.aov$MPG ~ autompg.aov$Año, data = subset(autompg.aov, subset= autompg.aov$Año < 73), FUN = mean)
 
 
+
+
+# Creación del grupo G1 con filtro
+g1 <- autompg.aov %>%
+  filter(autompg.aov$Año < 73)
+g1 <- round(aggregate(MPG ~ Año, data = g1, FUN = mean), digits = 2)
+
+# Creación del grupo G2 con filtro
+g2 <- autompg.aov %>%
+  filter(autompg.aov$Año >= 73 & autompg.aov$Año < 76)
+g2 <- round(aggregate(MPG ~ Año, data = g2, FUN = mean), digits = 2)
+
+# Creación del grupo G3 con filtro
+g3 <- autompg.aov %>%
+  filter(autompg.aov$Año >= 76 & autompg.aov$Año < 79)
+g3 <- round(aggregate(MPG ~ Año, data = g3, FUN = mean), digits = 2)
+
+# Creación del grupo G4 con filtro
+g4 <- autompg.aov %>%
+  filter(autompg.aov$Año >= 79)
+g4 <- round(aggregate(MPG ~ Año, data = g4, FUN = mean), digits = 2)
+
+
+# Otra alternativa sería convertir en medias MPG directamente y aplicar posteriormente los grupos
+# aggregate(autompg.aov$MPG ~ autompg.aov$Año, data = autompg.aov, FUN = mean)
+# autompg.aov$avgMPG <- autompg.aov$MPG(round(ddply(autompg.aov, ~Año, summarise,mean=mean(MPG))), digits=2)
 
 ```
 
 
 ```{r,eval=TRUE,echo=TRUE}
 ## Aplicamos ANOVA
+g1$Año <- as.character(g1$Año)
+g2$Año <- as.character(g2$Año)
+g3$Año <- as.character(g3$Año)
+g4$Año <- as.character(g4$Año)
 
-library(plyr)
-library(dplyr)
-ddply(autompg, ~autompg$año, summarise, mean=mean(autompg$mpg),sd=sd(autompg$mpg))
+X <- rbind(g1$MPG,g2$MPG,g3$MPG,g4$MPG, stringsAsFactors = FALSE)
+boxplot(X)
 
-g1$means <- ddply(g1, ~g1$año, summarise, mean=mean(g1$mpg), sd=sd(g1$mpg))
-
-aggregate(g1$mpg, data = mpg, FUN = mean)
-
+# representamos grafícamente los 4 grupos
+group <- c("<73","73<76","76<79",">79")
+valor <- c(g1,g2,g3,g4)
+df <- data.frame(group,valor)
+boxplot(valor)
 ```
 
+```{r,eval=TRUE,echo=TRUE}
+# Calculo AOV
+myaov <- aov()
 
+
+```
 
