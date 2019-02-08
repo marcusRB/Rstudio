@@ -1,0 +1,332 @@
+---
+title: "GA_R"
+author: "Marco Russo"
+date: "31 de enero de 2019"
+output: html_document
+---
+
+# Carga de las librerias y configurar los valores options
+
+```{r message=FALSE}
+# install.packages("googleAuthR")
+# install.packages("googleAnalyticsR")
+
+library(googleAnalyticsR)
+library(RGoogleAnalytics)
+library(ggplot2) # For some initial plots.
+library(forecast) # for the time series prediction.
+library("tidyverse")
+
+```
+
+
+# Autorización GA con Google Cloud
+
+```{r,eval=TRUE,echo=TRUE,warning=FALSE, message=FALSE}
+## Autorizamos a través del token con nuestro account Google
+ga_auth()
+
+
+# Claves API
+# client_id <- "559240535381-aurg1o547h7026oaqphivdsg5tlpf1ma.apps.googleusercontent.com"
+# client_secret <- "6m6PPgeQcqBq4vijwyfPhGAV"
+
+# optional - add your own Google Developers Console key
+# options(googleAuthR.client_id = client_id)
+# options(googleAuthR.client_secret = client_secret)
+# options(googleAuthR.scopes.selected = "https://www.googleapis.com/auth/analytics")
+```
+
+
+# Vamos con la primera query de Google Analytics in R
+
+```{r message=FALSE}
+## Veamos el listado de los account de GA y la guardamos en una nueva variable
+account_list <- google_analytics_account_list()
+
+# comprobamos la estructura
+str(account_list)
+
+## visualizamos la columna Vista, viewId
+head(account_list$viewId, n = 10)
+
+## se recoge la vista del índice 4 y se muestra
+ga_id <- account_list[4,'viewId']
+ga_id
+
+```
+
+
+
+```{r message=FALSE}
+
+# Create a list of the parameters to be used in the Google Analytics query
+# Get the Sessions by Month in 2014
+gadata <- google_analytics(id = ga_id, 
+                           start="2018-01-01", end="2018-12-31",
+                           metrics = "sessions", 
+                           dimensions = "date",
+                           max = 5000)
+
+subset(gadata, gadata$sessions == 0)
+
+nrow(subset(gadata, gadata$sessions == 0))
+```
+
+
+
+```{r message=FALSE}
+gadata %>%
+ggplot(aes(x=date, y=sessions)) +
+  geom_point()
+
+```
+
+
+```{r message=FALSE}
+gadata %>%
+ggplot(aes(x=date, y=sessions)) +
+  geom_point() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+
+```{r message=FALSE}
+gadata %>%
+ggplot(aes(x=date, y=sessions, size = sessions)) +
+  geom_point() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+
+
+
+```{r message=FALSE}
+gadata %>%
+ggplot(aes(x=date, y=sessions, size = sessions, color = sessions)) +
+  geom_point() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+
+```{r message=FALSE}
+gadata %>%
+ggplot(aes(x=date,y=sessions,group=1)) + 
+  geom_line() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
+  # some styles to rotate x-axis labels
+```
+
+
+```{r message=FALSE}
+# Now we can plot the data points with a trend line added:
+gadata %>%
+ggplot(aes(x = gadata$date,y = gadata$sessions) ) + 
+  geom_point() + 
+  geom_smooth() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+```{r message=FALSE}
+# Añadimos la dimensión día de la semana y fecha - solo 1er semestre
+gadata_2 <- google_analytics(id = ga_id, 
+                           start="2018-01-01", end="2018-06-30",
+                           metrics = c("sessions", "avgSessionDuration"), 
+                           dimensions = c("dayOfWeek","date"),
+                           max = 5000)
+```
+
+
+# Data visualization in R
+
+```{r message=FALSE}
+# Añadimos la dimensión día de la semana y fecha
+attach(gadata_2)
+ggplot(data = gadata_2, aes(x = dayOfWeek, y = sessions)) + 
+  geom_boxplot()
+
+ggplot(data = gadata_2, aes(x = dayOfWeek, y = avgSessionDuration)) + 
+  geom_boxplot()
+```
+
+# Traffic heatmap
+
+```{r message=FALSE}
+library("ggplot2")
+library("RColorBrewer")
+
+gadata_3 <- google_analytics(id = ga_id, 
+                           start="2018-01-01", end="2018-06-30", 
+                           metrics = c("avgSessionDuration"),
+                           dimensions = c("dayOfWeekName", "hour"),
+                           max = 5000)
+
+```
+
+
+```{r message=FALSE}
+# order the data
+gadata_3$dayOfWeekName <- factor(gadata_3$dayOfWeekName, levels = c("Sunday", 
+                                                          "Monday", 
+                                                          "Tuesday", 
+                                                          "Wednesday", 
+                                                          "Thursday", 
+                                                          "Friday", 
+                                                          "Saturday"))
+gadata_3[order(gadata_3$dayOfWeekName),]
+
+```
+
+
+```{r message=FALSE}
+# convert the data frame to xtab
+heatmap_data <- xtabs(avgSessionDuration ~ dayOfWeekName + hour, data=gadata_3)
+
+
+
+# plot heatmap
+heatmap(heatmap_data, 
+        col=colorRampPalette(brewer.pal(9,"Blues"))(100), 
+        revC=TRUE,                                        
+        scale="none",                                     
+        Rowv=NA, Colv=NA,                                 
+        main="avgSessionDuration by Day and Hour",                 
+        xlab="Hour")
+```
+
+
+# Device comparison
+
+```{r message=FALSE}
+gadata_4 <- google_analytics(id = ga_id, 
+                           start="2018-01-01", end="2018-06-30", 
+                           metrics = c("sessions", "avgSessionDuration"),
+                           dimensions = c("date", "deviceCategory"),
+                           max = 5000)
+
+
+
+# plot sessions with `deviceCategory`
+gadata_4 %>%
+ggplot(aes(deviceCategory, sessions)) +   
+  geom_bar(aes(fill = deviceCategory), stat="identity")
+
+# plot avgSessionDuration with `deviceCategory`
+gadata_4 %>%
+ggplot(aes(deviceCategory, avgSessionDuration)) +   
+  geom_bar(aes(fill = deviceCategory), stat="identity")
+```
+
+
+# Forecasting 26 días
+
+
+```{r message=FALSE}
+library("forecast")
+library("reshape2")
+library("stats")
+
+gadata_5 <- google_analytics(id = ga_id, 
+                           start="2018-06-01", end="2018-06-30",
+                           metrics = "sessions", 
+                           dimensions = "date",
+                           max = 5000)
+
+
+timeseries <- ts(gadata_5$sessions, frequency=7)
+components <- decompose(timeseries)
+plot(components)
+
+# note the way we add a column to a data.frame
+gadata_5$adjusted <- gadata_5$sessions - components$seasonal
+
+theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+forecastmodel <- HoltWinters(timeseries)
+plot(forecastmodel)
+
+forecast <- forecast:::forecast.HoltWinters(forecastmodel, h=26) # 26 days in future
+plot(forecast, xlim=c(0,13))
+
+forecastdf <- as.data.frame(forecast)
+totalrows <- nrow(gadata_5) + nrow(forecastdf)
+forecastdata <- data.frame(day=c(1:totalrows),
+actual=c(gadata_5$sessions,rep(NA,nrow(forecastdf))),
+forecast=c(rep(NA,nrow(gadata_5)-1),tail(gadata_5$sessions,1),forecastdf$"Point Forecast"),
+forecastupper=c(rep(NA,nrow(gadata_5)-1),tail(gadata_5$sessions,1),forecastdf$"Hi 80"),
+forecastlower=c(rep(NA,nrow(gadata_5)-1),tail(gadata_5$sessions,1),forecastdf$"Lo 80")
+)
+
+ggplot(forecastdata, aes(x=day)) +
+geom_line(aes(y=actual),color="black") +
+geom_line(aes(y=forecast),color="blue") +
+geom_ribbon(aes(ymin=forecastlower,ymax=forecastupper), alpha=0.4, fill="green") +
+xlim(c(0,90)) +
+xlab("Day") +
+ylab("Sessions")
+```
+
+# Forecasting 90 días
+
+```{r message=FALSE}
+library("forecast")
+library("reshape2")
+library("stats")
+
+gadata_6 <- google_analytics(id = ga_id, 
+                           start="2019-01-01", end="2019-01-30",
+                           metrics = "sessions", 
+                           dimensions = "date",
+                           max = 5000)
+
+
+timeseries <- ts(gadata_6$sessions, frequency=7)
+components <- decompose(timeseries)
+plot(components)
+
+# note the way we add a column to a data.frame
+gadata_6$adjusted <- gadata_6$sessions - components$seasonal
+
+theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+forecastmodel <- HoltWinters(timeseries)
+plot(forecastmodel)
+
+forecast <- forecast:::forecast.HoltWinters(forecastmodel, h=30) # 26 days in future
+plot(forecast, xlim=c(0,13))
+
+forecastdf <- as.data.frame(forecast)
+totalrows <- nrow(gadata_6) + nrow(forecastdf)
+forecastdata <- data.frame(day=c(1:totalrows),
+actual=c(gadata_6$sessions,rep(NA,nrow(forecastdf))),
+forecast=c(rep(NA,nrow(gadata_6)-1),tail(gadata_6$sessions,1),forecastdf$"Point Forecast"),
+forecastupper=c(rep(NA,nrow(gadata_6)-1),tail(gadata_6$sessions,1),forecastdf$"Hi 80"),
+forecastlower=c(rep(NA,nrow(gadata_6)-1),tail(gadata_6$sessions,1),forecastdf$"Lo 80")
+)
+
+ggplot(forecastdata, aes(x=day)) +
+geom_line(aes(y=actual),color="black") +
+geom_line(aes(y=forecast),color="blue") +
+geom_ribbon(aes(ymin=forecastlower,ymax=forecastupper), alpha=0.4, fill="green") +
+xlim(c(0,90)) +
+xlab("Day") +
+ylab("Sessions")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
