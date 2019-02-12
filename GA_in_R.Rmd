@@ -121,7 +121,7 @@ ggplot(aes(x=date,y=sessions,group=1)) +
 ```{r message=FALSE}
 # Now we can plot the data points with a trend line added:
 gadata %>%
-ggplot(aes(x = gadata$date,y = gadata$sessions) ) + 
+ggplot(aes(x = date, y = sessions) ) + 
   geom_point() + 
   geom_smooth() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
@@ -246,7 +246,7 @@ forecastmodel <- HoltWinters(timeseries)
 plot(forecastmodel)
 
 forecast <- forecast:::forecast.HoltWinters(forecastmodel, h=26) # 26 days in future
-plot(forecast, xlim=c(0,13))
+plot(forecast, xlim=c(0,12))
 
 forecastdf <- as.data.frame(forecast)
 totalrows <- nrow(gadata_5) + nrow(forecastdf)
@@ -300,15 +300,15 @@ totalrows <- nrow(gadata_6) + nrow(forecastdf)
 forecastdata <- data.frame(day=c(1:totalrows),
 actual=c(gadata_6$sessions,rep(NA,nrow(forecastdf))),
 forecast=c(rep(NA,nrow(gadata_6)-1),tail(gadata_6$sessions,1),forecastdf$"Point Forecast"),
-forecastupper=c(rep(NA,nrow(gadata_6)-1),tail(gadata_6$sessions,1),forecastdf$"Hi 80"),
-forecastlower=c(rep(NA,nrow(gadata_6)-1),tail(gadata_6$sessions,1),forecastdf$"Lo 80")
+forecastupper=c(rep(NA,nrow(gadata_6)-1),tail(gadata_6$sessions,1),forecastdf$"Hi 50"),
+forecastlower=c(rep(NA,nrow(gadata_6)-1),tail(gadata_6$sessions,1),forecastdf$"Lo 50")
 )
 
 ggplot(forecastdata, aes(x=day)) +
 geom_line(aes(y=actual),color="black") +
 geom_line(aes(y=forecast),color="blue") +
 geom_ribbon(aes(ymin=forecastlower,ymax=forecastupper), alpha=0.4, fill="green") +
-xlim(c(0,90)) +
+xlim(c(0,50)) +
 xlab("Day") +
 ylab("Sessions")
 ```
