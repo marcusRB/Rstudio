@@ -29,8 +29,8 @@ ga_auth()
 
 
 # Claves API
-# client_id <- "559240535381-aurg1o547h7026oaqphivdsg5tlpf1ma.apps.googleusercontent.com"
-# client_secret <- "6m6PPgeQcqBq4vijwyfPhGAV"
+# client_id <- "CLIENT_ID_HERE_FROM_GOOGLE_CLOUD"
+# client_secret <- "CLIENT_SECRET_HERE_FROM_GOOGLE_CLOUD"
 
 # optional - add your own Google Developers Console key
 # options(googleAuthR.client_id = client_id)
