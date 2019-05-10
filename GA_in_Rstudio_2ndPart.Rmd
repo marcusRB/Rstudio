@@ -5,16 +5,22 @@ date: "31 de enero de 2019"
 output: html_document
 ---
 
+```{r message=FALSE}
+# Instalamos las librerias
+library("forecast")
+library("reshape2")
+library("stats")
+library("ggplot2")
+library("ggthemes")
+library("ggrepel")
 
+```
 # Forecasting 26 días
 
 
 ```{r message=FALSE}
-library("forecast")
-library("reshape2")
-library("stats")
-
-gadata_5 <- google_analytics(id = ga_id, 
+# 
+gadata_5 <- google_analytics_3(id = ga_id, 
                            start="2018-06-01", end="2018-06-30",
                            metrics = "sessions", 
                            dimensions = "date",
@@ -61,7 +67,7 @@ library("forecast")
 library("reshape2")
 library("stats")
 
-gadata_6 <- google_analytics(id = ga_id, 
+gadata_6 <- google_analytics_3(id = ga_id, 
                            start="2019-01-01", end="2019-01-30",
                            metrics = "sessions", 
                            dimensions = "date",
@@ -104,7 +110,7 @@ ylab("Sessions")
 
 
 ```{r message=FALSE}
-gadata_7 <- google_analytics(id = ga_id, 
+gadata_7 <- google_analytics_3(id = ga_id, 
                            start="2018-01-01", end="2018-06-30",
                            metrics = c("sessions",
                                        "users",
@@ -168,6 +174,7 @@ sources_clean %>%         # passing our data frame into the plot function
 
 
 ```{r}
+# 
 sources_clean %>%
   filter(sales >= 10) %>%   # show only the channels with 10+ sales
   ggplot(
@@ -189,7 +196,7 @@ sources_clean %>%
     "Sessions and sales distribution for top channels",
     subtitle = "Based on the Google Analytics data"
   ) +
-  geom_label_repel(alpha = 1/2, aes(label = channel), show.legend = F)
+  geom_label_repel(alpha = 1/2, aes(label = channel, breas = channel), show.legend = F)
 ```
 
 
