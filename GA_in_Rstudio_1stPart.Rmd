@@ -12,8 +12,11 @@ output: html_document
 # install.packages("googleAnalyticsR")
 # install.packages("bupaR")
 
+# Use google_analytics_3 old version and 
 library(googleAnalyticsR)
-library(RGoogleAnalytics)
+
+
+# library(RGoogleAnalytics) Alternative with secretID and Token
 library(ggplot2) # For some initial plots.
 library(forecast) # for the time series prediction.
 library(tidyverse)
@@ -43,8 +46,7 @@ ga_auth()
 
 ```{r message=FALSE}
 ## Veamos el listado de los account de GA y la guardamos en una nueva variable
-account_list <- google_analytics_account_list()
-
+account_list <- ga_account_list()
 # comprobamos la estructura
 str(account_list)
 
@@ -62,13 +64,15 @@ ga_id
 ```{r message=FALSE}
 
 # Create a list of the parameters to be used in the Google Analytics query
-# Get the Sessions by Month in 2014
-gadata <- google_analytics(id = ga_id, 
+# Get the Sessions by Month in 2018
+# User google_analytics_3 for old API version
+gadata <- google_analytics_3(id = ga_id, 
                            start="2018-01-01", end="2018-12-31",
                            metrics = "sessions", 
                            dimensions = "date",
                            max = 5000)
 
+# Check if exist sessions igual ceros
 subset(gadata, gadata$sessions == 0)
 
 nrow(subset(gadata, gadata$sessions == 0))
@@ -130,7 +134,7 @@ ggplot(aes(x = date, y = sessions) ) +
 
 ```{r message=FALSE}
 # Añadimos la dimensión día de la semana y fecha - solo 1er semestre
-gadata_2 <- google_analytics(id = ga_id, 
+gadata_2 <- google_analytics_3(id = ga_id, 
                            start="2018-01-01", end="2018-06-30",
                            metrics = c("sessions", "avgSessionDuration"), 
                            dimensions = c("dayOfWeek","date"),
@@ -156,7 +160,7 @@ ggplot(data = gadata_2, aes(x = dayOfWeek, y = avgSessionDuration)) +
 library("ggplot2")
 library("RColorBrewer")
 
-gadata_3 <- google_analytics(id = ga_id, 
+gadata_3 <- google_analytics_3(id = ga_id, 
                            start="2018-01-01", end="2018-06-30", 
                            metrics = c("avgSessionDuration"),
                            dimensions = c("dayOfWeekName", "hour"),
@@ -199,7 +203,7 @@ heatmap(heatmap_data,
 # Device comparison
 
 ```{r message=FALSE}
-gadata_4 <- google_analytics(id = ga_id, 
+gadata_4 <- google_analytics_3(id = ga_id, 
                            start="2018-01-01", end="2018-06-30", 
                            metrics = c("sessions", "avgSessionDuration"),
                            dimensions = c("date", "deviceCategory"),
