@@ -32,16 +32,6 @@ library(bupaR)
 ga_auth()
 
 
-# Claves API
-# client_id <- "CLIENT_ID_HERE_FROM_GOOGLE_CLOUD"
-# client_secret <- "CLIENT_SECRET_HERE_FROM_GOOGLE_CLOUD"
-
-# optional - add your own Google Developers Console key
-# options(googleAuthR.client_id = client_id)
-# options(googleAuthR.client_secret = client_secret)
-# options(googleAuthR.scopes.selected = "https://www.googleapis.com/auth/analytics")
-```
-
 
 ```{r message=FALSE}
 ## Veamos el listado de los account de GA y la guardamos en una nueva variable
@@ -78,13 +68,13 @@ web_data_metrics <- google_analytics_3(id = ga_id,
 
 
 ```{r}
-## get only desktop rows, and the date, channelGrouping and sessions columns
+## agrupamos solo las dimensiones fecha, canales y dispositivos en desktop
 pivoted <- web_data_metrics %>% 
   filter(deviceCategory == "desktop") %>% 
   select(date, channelGrouping, sessions) %>%
   spread(channelGrouping, sessions)
 
-## get rid of any NA's and replace with 0
+## pivotamos realizando el cambio de NA's a ceros
 pivoted[is.na(pivoted)] <- 0
 
 head(pivoted)
@@ -95,10 +85,10 @@ head(pivoted)
 
 
 ```{r}
-## make a time-series object
+## creamos una serie temporal con frecuencia semanal
 web_data_ts <- ts(pivoted[-1], frequency = 7)
 
-## time-series are set up to have useful plots
+## Creamos un plot 
 plot(web_data_ts, axes = FALSE)
 
 ```
