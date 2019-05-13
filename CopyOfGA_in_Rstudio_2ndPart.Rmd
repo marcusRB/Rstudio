@@ -1,7 +1,7 @@
 ---
 title: "Google Analytics and Machine Learning 2nd Part"
 author: "Marco Russo"
-date: "12 de mayo de 2019"
+date: "31 de enero de 2019"
 output: html_document
 ---
 
@@ -16,48 +16,7 @@ library("ggrepel")
 library(dplyr)
 library(tidyr)
 
-
-# Use google_analytics_3 old version and 
-library(googleAnalyticsR)
-# library(RGoogleAnalytics) Alternative with secretID and Token
-library(ggplot2) # For some initial plots.
-library(forecast) # for the time series prediction.
-library(tidyverse)
-library(bupaR)
 ```
-
-
-```{r,eval=TRUE,echo=TRUE,warning=FALSE, message=FALSE}
-## Autorizamos a través del token con nuestro account Google
-ga_auth()
-
-
-# Claves API
-# client_id <- "CLIENT_ID_HERE_FROM_GOOGLE_CLOUD"
-# client_secret <- "CLIENT_SECRET_HERE_FROM_GOOGLE_CLOUD"
-
-# optional - add your own Google Developers Console key
-# options(googleAuthR.client_id = client_id)
-# options(googleAuthR.client_secret = client_secret)
-# options(googleAuthR.scopes.selected = "https://www.googleapis.com/auth/analytics")
-```
-
-
-```{r message=FALSE}
-## Veamos el listado de los account de GA y la guardamos en una nueva variable
-account_list <- ga_account_list()
-# comprobamos la estructura
-str(account_list)
-
-## visualizamos la columna Vista, viewId
-head(account_list$viewId, n = 10)
-
-## se recoge la vista del índice 4 y se muestra
-ga_id <- account_list[4,'viewId']
-ga_id
-
-```
-
 
 
 ## Create dataframe with main metrics and dimensions
@@ -73,9 +32,6 @@ web_data_metrics <- google_analytics_3(id = ga_id,
                                        samplingLevel = 'WALK')
 
 ```
-
-
-
 
 ```{r}
 ## get only desktop rows, and the date, channelGrouping and sessions columns
@@ -279,6 +235,117 @@ plot(impact)
 - pointwise - the difference between the forecast and reality per day
 - cumulative - the cumuative effect on sessions in the post event period
 
+
+
+
+```{r message=FALSE}
+gadata_7 <- google_analytics_3(id = ga_id, 
+                           start="2018-01-01", end="2018-06-30",
+                           metrics = c("sessions",
+                                       "users",
+                                       "transactions",
+                                       "transactionRevenue"
+                                       ),
+                           dimensions = c("channelGrouping"),   # pull the default channel grouping as the only dimension
+                           #anti_sample = TRUE,    # if you happen to encounter sampling, add this parameter to pull data in multiple batches, automatically
+                                      
+                           max = 5000,
+                           )
+
+gadata_7
+```
+
+
+
+```{r}
+# now let's make some calculations on the sessions/users share and conversion rates
+sources_clean = gadata_7 %>%
+  mutate(
+    session_share = sessions / sum(sessions),
+    sales_share = transactions / sum(transactions),
+    revenue_share = transactionRevenue / sum(transactionRevenue)
+  ) %>%
+  arrange(-session_share) %>%
+  transmute(
+    channel = channelGrouping,
+    sessions,
+    users,
+    sales = transactions,
+    revenue = transactionRevenue,
+    session_share,
+    session_addup = cumsum(session_share),
+    sales_share,
+    sales_addup = cumsum(sales_share),
+    revenue_share,
+    revenue_addup = cumsum(revenue_share),
+    cr_sessions = transactions / sessions,
+    cr_users = transactions / users,
+    rps = revenue / sessions,
+    rpu = revenue / users
+  )
+sources_clean
+```
+
+
+
+```{r}
+sources_clean %>%         # passing our data frame into the plot function
+  ggplot(
+    aes(                  # specifying which fields should we use for plotting
+      x = session_share,
+      y = sales_share,
+      color = channel
+    )
+  ) +
+  geom_point(alpha = 5/7) # specifying the type of the plot we want
+```
+
+
+
+```{r}
+# 
+sources_clean %>%
+  filter(sales >= 10) %>%   # show only the channels with 10+ sales
+  ggplot(
+    aes(
+      x = session_share,
+      y = sales_share,
+      color = channel
+    )
+  ) +
+  geom_abline(slope = 1, alpha = 1/10) +
+  geom_point(alpha = 5/7) +
+  theme_minimal(base_family = "Helvetica Neue") +
+  theme(legend.position = "none") +
+  scale_x_continuous(name = "Share of sessions", limits = c(0, NA), labels = "%") +
+  scale_y_continuous(name = "Share of sales", limits = c(0, NA), labels = "%") +
+  scale_color_few(name = "Channel") +
+  scale_fill_few() +
+  ggtitle(
+    "Sessions and sales distribution for top channels",
+    subtitle = "Based on the Google Analytics data"
+  ) +
+  geom_label_repel(alpha = 1/2, aes(label = channel), show.legend = F)
+```
+
+
+
+
+```{r}
+# I use the table "query_results" with my analytics data
+# run it from a query or run:
+# query_results <- read.csv("./query-results.csv")
+ 
+log <- query_results %>%
+  eventlog(
+    case_id = "case_id",                           # the user id (browser cookie)
+    activity_id = "activity_id",                   # this contains the page name that is viewd
+    activity_instance_id = "activity_instance_id", # all user activity from that page view
+    lifecycle_id = "lifecycle_id",                 # page activity: one of 'start' or 'end' per page (funnel-step)
+    timestamp = "timestamp",
+    resource_id = "resource_id"                    # I fill this with device_type
+  )
+```
 
 
 ## Correlation
