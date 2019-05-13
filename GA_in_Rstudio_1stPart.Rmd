@@ -8,7 +8,6 @@ output: html_document
 # Carga de las librerias y configurar los valores options
 
 ```{r message=FALSE}
-# install.packages("googleAuthR")
 # install.packages("googleAnalyticsR")
 # install.packages("bupaR")
 
@@ -30,15 +29,6 @@ library(bupaR)
 ## Autorizamos a través del token con nuestro account Google
 ga_auth()
 
-
-# Claves API
-# client_id <- "CLIENT_ID_HERE_FROM_GOOGLE_CLOUD"
-# client_secret <- "CLIENT_SECRET_HERE_FROM_GOOGLE_CLOUD"
-
-# optional - add your own Google Developers Console key
-# options(googleAuthR.client_id = client_id)
-# options(googleAuthR.client_secret = client_secret)
-# options(googleAuthR.scopes.selected = "https://www.googleapis.com/auth/analytics")
 ```
 
 
@@ -119,12 +109,12 @@ gadata %>%
 ggplot(aes(x=date,y=sessions,group=1)) + 
   geom_line() + 
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
-  # some styles to rotate x-axis labels
+ 
 ```
 
 
 ```{r message=FALSE}
-# Now we can plot the data points with a trend line added:
+# Representamos grafícamente la linea de tendencia
 gadata %>%
 ggplot(aes(x = date, y = sessions) ) + 
   geom_point() + 
@@ -159,7 +149,7 @@ ggplot(data = gadata_2, aes(x = dayOfWeek, y = avgSessionDuration)) +
 ```{r message=FALSE}
 library("ggplot2")
 library("RColorBrewer")
-
+# Creamos el data frame con día de la semana, hora del día, promedio de la sesión
 gadata_3 <- google_analytics_3(id = ga_id, 
                            start="2018-01-01", end="2018-06-30", 
                            metrics = c("avgSessionDuration"),
@@ -170,7 +160,7 @@ gadata_3 <- google_analytics_3(id = ga_id,
 
 
 ```{r message=FALSE}
-# order the data
+# ordenamos los datos por día de la semana
 gadata_3$dayOfWeekName <- factor(gadata_3$dayOfWeekName, levels = c("Sunday", 
                                                           "Monday", 
                                                           "Tuesday", 
@@ -184,7 +174,7 @@ gadata_3[order(gadata_3$dayOfWeekName),]
 
 
 ```{r message=FALSE}
-# convert the data frame to xtab
+# convertimos los datos en una xtable
 heatmap_data <- xtabs(avgSessionDuration ~ dayOfWeekName + hour, data=gadata_3)
 
 
@@ -200,7 +190,7 @@ heatmap(heatmap_data,
 ```
 
 
-# Device comparison
+# Comparativa categoría de dispositivos
 
 ```{r message=FALSE}
 gadata_4 <- google_analytics_3(id = ga_id, 
@@ -211,12 +201,12 @@ gadata_4 <- google_analytics_3(id = ga_id,
 
 
 
-# plot sessions with `deviceCategory`
+# Plot de sesiones por dispositivo
 gadata_4 %>%
 ggplot(aes(deviceCategory, sessions)) +   
   geom_bar(aes(fill = deviceCategory), stat="identity")
 
-# plot avgSessionDuration with `deviceCategory`
+# plot promedio duración de sesiones por dispositivo
 gadata_4 %>%
 ggplot(aes(deviceCategory, avgSessionDuration)) +   
   geom_bar(aes(fill = deviceCategory), stat="identity")
