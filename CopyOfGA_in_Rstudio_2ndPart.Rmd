@@ -1,7 +1,7 @@
 ---
-title: "Google Analytics and Machine Learning 2nd Part"
+title: "Google Analytics and Machine Learning 3rd Part"
 author: "Marco Russo"
-date: "31 de enero de 2019"
+date: "Mayo 2019"
 output: html_document
 ---
 
